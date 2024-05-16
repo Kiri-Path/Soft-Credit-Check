@@ -14,7 +14,7 @@ from sklearn.model_selection import train_test_split
 import seaborn as sns
 sns.set(style="white")
 sns.set(style="whitegrid", color_codes=True)
-data = pd.read_excel(r'C:\Users\pathmk02\Documents\Logistic Regression Training Data v2.xlsx', header=0)
+data = pd.read_excel(r'my training data location', header=0)
 data = data.dropna()
 print(data.shape)
 print(list(data.columns))
@@ -119,8 +119,8 @@ rfe = RFE(logreg)
 rfe = rfe.fit(data_final[X], data_final[y] ) #now data_final x is the data frame for the columns which are in X, and data_final _y is the column vector for sales.
 print(rfe.support_) 
 print(rfe.ranking_) 
-# np.savetxt(r'C:\Users\pathmk02\Documents\Logistic Regression Model\rfe.support_.csv',rfe.support_,delimiter=',')
-# np.savetxt(r'C:\Users\pathmk02\Documents\Logistic Regression Model\rfe.ranking_.csv',rfe.ranking_,delimiter=',')
+# np.savetxt(r'my RFE support location',')
+# np.savetxt(r'my RFE ranking location',')
 sum(rfe.support_)
 
 data_final.columns
@@ -165,7 +165,7 @@ from sklearn import metrics
 logreg = LogisticRegression()
 logreg.fit(X_train, y_train)
 print('Parameters: ', result.params)
-np.savetxt(r'C:\Users\pathmk02\Documents\Logistic Regression Model\Output_Coefficients.csv',result.params,delimiter=',')
+np.savetxt(r'my location for logisitic regression output coefficents',')
 y_pred = logreg.predict(X_test)
 
 
