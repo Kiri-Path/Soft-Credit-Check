@@ -1,0 +1,262 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib as mpl
+%matplotlib inline
+from sklearn import preprocessing
+import matplotlib.pyplot as plt 
+plt.rc("font", size=14)
+plt.rcParams['figure.figsize'] = (10,10)
+from sklearn.linear_model import LogisticRegression
+from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
+import seaborn as sns
+sns.set(style="white")
+sns.set(style="whitegrid", color_codes=True)
+data = pd.read_excel(r'C:\Users\pathmk02\Documents\Logistic Regression Training Data v2.xlsx', header=0)
+data = data.dropna()
+print(data.shape)
+print(list(data.columns))
+data.head()
+data['Sales'].value_counts()
+[1,0,0,0], [0,1,0,0], ... this is the process of one hot encoding when you have more that one element in your feature list.
+This way  the other 3 netwroks are equal distance away from the hot encoded variable. 
+whereas if we just assigned integers eg 1,2,3,4 for network, then 1 is closer to 2 that 4 is to 2 and algortih will learn
+#here we plot sales based on whether they became sales or not. the palette is just a colour palette for the graph below.
+sns.countplot(x='Sales',data=data, palette='hls')
+plt.show()
+plt.savefig('count_plot')
+count_no_sale = len(data[data['Sales']==0])
+count_sale = len(data[data['Sales']==1])
+pct_of_no_sale = count_no_sale/(count_no_sale+count_sale)
+print("percentage of NO Order to Sale is", pct_of_no_sale*100)
+pct_of_sale = count_sale/(count_no_sale+count_sale)
+print("percentage of Order to Sale", pct_of_sale*100)
+#this will tell me best combination based on mean sales, and showing count to then see significance of result
+data.groupby(by=['Device', 'Network', 'Channel', 'UpfrontAndMonthly'])['Sales'].agg(['count', 'mean'])
+
+
+# #this shows the average performance of each feature has contributed to a sale. for example if we look at device type, tablet, desktop mobile will all add up to 1 whether we look at sale or no sale. 
+# data.groupby(['Sales']).mean()
+data.head()
+%matplotlib inline
+pd.crosstab(data.UpfrontAndMonthly,data.Sales).plot(kind='bar', figsize=(50,10))
+plt.title('Sale Frequency for Upfront and Monthly Cost')
+plt.xlabel('Upfront_Price')
+plt.ylabel('Sales')
+plt.savefig('sale_fre_monthly')
+# %matplotlib inline
+# pd.crosstab(data.Time,data.Sales).plot(kind='bar', figsize=(50,10))
+# plt.title('Sale Frequency for Time')
+# plt.xlabel('Sort Order')
+# plt.ylabel('Sales')
+# plt.savefig('sale_fre_TIME')
+%matplotlib inline
+pd.crosstab(data.Device,data.Sales).plot(kind='bar', figsize=(50,10))
+plt.title('Sale Frequency for Device Type')
+plt.xlabel('Device Type')
+plt.ylabel('Sales')
+plt.savefig('sale_fre_Device')
+%matplotlib inline
+pd.crosstab(data.Channel,data.Sales).plot(kind='bar', figsize=(50,10))
+plt.title('Sale Frequency for Marketing Channel')
+plt.xlabel('Marketing_Channel')
+plt.ylabel('Sales')
+plt.savefig('sale_fre_channel')
+#
+cat_vars=['Device', 'Network', 'Channel', 'UpfrontAndMonthly']
+for var in cat_vars: # this is saying for each element in cat_vars
+    cat_list='var'+'_'+var # creating a string which has a prefix of 'var_Device'
+    cat_list = pd.get_dummies(data[var], prefix=var) # this is one-hot encoding, each column will now be for device_mobile with a 1 or zero. (originally it would of been column=device with tablet movile and desktop as the rows.) 
+    data1=data.join(cat_list)
+    data=data1
+data.head()
+# Scatter Plot with Hue for visualizing data in 3-D
+
+f, ax = plt.subplots(figsize=(100, 60))
+corr = data.corr()
+hm = sns.heatmap(round(corr,2), annot=True, ax=ax, cmap="coolwarm",fmt='.2f',
+                 linewidths=.05)
+f.subplots_adjust(top=0.93)
+t= f.suptitle('Order Attributes Correlation Heatmap', fontsize=50)
+cat_vars=['Device', 'Network', 'Channel', 'UpfrontAndMonthly']
+data_vars=data.columns.values.tolist()
+to_keep=[i for i in data_vars if i not in cat_vars]
+print(data_vars)
+print(to_keep)
+# # Scaling attribute values to avoid few outiers
+# cols = ['Device', 'Network', 'Channel', 'UpfrontAndMonthly']
+# subset_df = data[to_keep] # this is a new data frame which is the one-hot encoded column.
+
+# from sklearn.preprocessing import StandardScaler
+# ss = StandardScaler()
+
+# scaled_df = ss.fit_transform(subset_df)
+# scaled_df = pd.DataFrame(scaled_df, columns=to_keep)
+# final_df = pd.concat([scaled_df, data['Sales']], axis=1)
+# final_df.head()
+
+# # 
+# # plot parallel coordinates
+# from pandas.plotting import parallel_coordinates
+# pc = parallel_coordinates(final_df, 'Sales', color=('#FFE888', '#FF9999'))
+data_final=data[to_keep]
+data_final.columns.values # this is just making sure we have the columns we wanted or atleast should still be there. these are the onehot encoded columns.
+data_final_vars=data_final.columns.values.tolist()
+y=['Sales']
+X=[i for i in data_final_vars if i not in y]
+print(X)
+print(y)
+from sklearn import datasets
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LogisticRegression
+
+logreg = LogisticRegression()
+
+#The Recursive Feature Elimination (RFE) method is a feature selection approach. It works by recursively removing attributes and building a model on those attributes that remain. It uses the model accuracy to identify which attributes (and combination of attributes) contribute the most to predicting the target attribute
+rfe = RFE(logreg)
+rfe = rfe.fit(data_final[X], data_final[y] ) #now data_final x is the data frame for the columns which are in X, and data_final _y is the column vector for sales.
+print(rfe.support_) 
+print(rfe.ranking_) 
+# np.savetxt(r'C:\Users\pathmk02\Documents\Logistic Regression Model\rfe.support_.csv',rfe.support_,delimiter=',')
+# np.savetxt(r'C:\Users\pathmk02\Documents\Logistic Regression Model\rfe.ranking_.csv',rfe.ranking_,delimiter=',')
+sum(rfe.support_)
+
+data_final.columns
+cols=[
+'Device_Other', 
+'Device_Tablet',  
+'Network_EE', 
+'Network_Vodafone',
+'Network_iD',
+'Channel_Display',
+'Channel_Affiliate',
+'Channel_Other_Campaigns', 
+'Channel_Dixons_Carphone_Network',
+'Channel_Referring_Domains',
+'Channel_Social_Networks',
+'UpfrontAndMonthly_0M10',
+'UpfrontAndMonthly_0M20',
+'UpfrontAndMonthly_0M30', 
+'UpfrontAndMonthly_0M40',
+'UpfrontAndMonthly_0M50',
+'UpfrontAndMonthly_0M60', 
+'UpfrontAndMonthly_0M70',
+'UpfrontAndMonthly_999M0', 
+'UpfrontAndMonthly_999M10',
+'UpfrontAndMonthly_999M20',
+'UpfrontAndMonthly_999M30', 
+'UpfrontAndMonthly_999M40',
+'UpfrontAndMonthly_999M50', 
+'UpfrontAndMonthly_999M70',
+'UpfrontAndMonthly_999M80'
+] 
+X=data_final[cols]
+y=data_final['Sales']
+import statsmodels.api as sm
+logit_model=sm.Logit(y,X)
+result=logit_model.fit()
+print(result.summary())
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=0)
+from sklearn.linear_model import LogisticRegression
+from sklearn import metrics
+logreg = LogisticRegression()
+logreg.fit(X_train, y_train)
+print('Parameters: ', result.params)
+np.savetxt(r'C:\Users\pathmk02\Documents\Logistic Regression Model\Output_Coefficients.csv',result.params,delimiter=',')
+y_pred = logreg.predict(X_test)
+
+
+print('Accuracy of logistic regression classifier on test set: {:.2f}'.format(logreg.score(X_test, y_test)))
+
+A confusion matrix will tell give you a table of True postiive, True negative, False positive, False negative table.
+it will show you the ways in which the classification model is confused when it makes predicitons. 
+it gives an insight into not only the errors made by the classfiers but also the types of errors that are being made. 
+it is this breakdown that overcomes the limitation of using classification accruacy alone.
+
+            Predicted NO     Predicted Yes
+        
+Actual No   TN (true -ve)    FP (false +ve)
+ 
+Actual Yes  FN (false -ve)   TP (true +ve)
+
+
+Measures using the confusion matrix:
+
+Recall tells us out of all the positive classes, how much were predicted correctly.
+
+recall = TP/(TP+FN)
+
+Precision tells us out of all the classes, how much we predicted correctly
+
+precision = TP/(TP+FP)
+
+F score = helps to measure recall and precision at the same time
+
+F score = (2*Recall* Precision)/(Recall + Precision)
+from sklearn.metrics import confusion_matrix
+confusion_matrix = confusion_matrix(y_test, y_pred)
+print(confusion_matrix)
+the above results tells us we have 48831+10504 correct predictions and 6129+17758 incorrect predictions
+from sklearn import model_selection
+from sklearn.model_selection import cross_val_score
+kfold = model_selection.KFold(n_splits=10, random_state=7)
+modelCV = LogisticRegression()
+scoring = 'accuracy'
+results = model_selection.cross_val_score(modelCV, X_train, y_train, cv=kfold, scoring=scoring)
+print("10-fold cross validation average accuracy: %.3f" % (results.mean()))
+ROC - reciever operating characteristic
+AUC - Area under the curve
+
+roc curve used to visualise the performance of binary classifier (sale or no sale)
+
+its a plot of the true positive rate (i.e when there is a sale, how often does the logistic regression predict sale) when the  vs false positive rate (i.e when there is no sale, how often does the logisitic regression predict sale)
+
+The ROC curve is created by plotting the TPR vs FPR for all possible classifciation thresholds which range from o to 1.  
+
+the line y=x is the worst type of classifier as this is no better than guessing as the true positive rate will be equal to the false positive rate. 
+
+True positive rate = true positive values  to right of where your threshold is, divided by the overall true positive value. 
+
+(like wise for False positive)
+
+therefore you do not want TPR to be similar to FPR. 
+
+the ideal solution is to have a high TPR and a very low FPR. 
+
+the AUC is just the area under the curve, therefore a high AUC will be reflective of a good ROC curve.
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
+logit_roc_auc = roc_auc_score(y_test, logreg.predict(X_test))
+fpr, tpr, thresholds = roc_curve(y_test, logreg.predict_proba(X_test)[:,1])
+plt.figure()
+plt.plot(fpr, tpr, label='Logistic Regression (area = %0.2f)' % logit_roc_auc)
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic')
+plt.legend(loc="lower right")
+plt.savefig('Log_ROC')
+plt.show()
+
+our dataset is inabalnced as we have c.66% of non-sale vs c.33% which is sales data. now there might be a bias when doing predictions because we have more data that results to non-sale. therefore the accuacy might be high for predicting a no-sale since there is more data to work with, but it can be misleading which is why we need to use other metrics like precision and recall. 
+
+
+Recall tells us out of all the positive classes, how much were predicted correctly.
+
+recall = TP/(TP+FN)
+
+Precision tells us out of all the classes, how much we predicted correctly
+
+precision = TP/(TP+FP)
+
+F score = helps to measure recall and precision at the same time
+
+F score = (2*Recall* Precision)/(Recall + Precision)
+from sklearn.metrics import classification_report
+print(classification_report(y_test, y_pred))
+
